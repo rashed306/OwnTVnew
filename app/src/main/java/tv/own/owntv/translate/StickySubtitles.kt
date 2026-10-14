@@ -90,13 +90,20 @@ fun StickySubtitles(player: PlaybackEngine) {
     androidx.compose.runtime.remember(context) { SubtitleTranslator.init(context); true }
     val count by player.subCount.collectAsStateWithLifecycle()
     val meta by player.currentMeta.collectAsStateWithLifecycle()
-    LaunchedEffect(player, meta) { SubtitleTranslator.resetSource() }
+    LaunchedEffect(player, meta) {
+        SubtitleTranslator.resetSource()
+        // OwnTVnew: this channel's remembered live subtitle timing (mpv), or back to zero.
+        runCatching { LiveSubtitleTiming.restore(context, player, meta.title) }
+    }
     LaunchedEffect(player, meta, count) {
         if (count <= 0) return@LaunchedEffect
         // Give the engine's own per-channel recall its turn first; this only fills in when nothing
         // ended up selected.
         delay(APPLY_DELAY_MS)
         runCatching { SubtitleChoice.apply(context, player) }
+        // After a track is (re)selected the engine may reset its delay; put this channel's back.
+        delay(APPLY_DELAY_MS)
+        runCatching { LiveSubtitleTiming.restore(context, player, meta.title) }
     }
 }
 

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,8 +42,21 @@ fun SubtitleOverlay(
     sizeScale: Float = 1f,
 ) {
     val rawText by player.subText.collectAsStateWithLifecycle()
+    // OwnTVnew: a live teletext line that is never replaced or cleared (teletext often sends no
+    // "clear") times out after a reading time. Captions and film subtitles keep their own timing.
+    val liveTeletext = player.isLiveContent &&
+        player.textTracks().any { it.selected && tv.own.owntv.translate.LiveSubtitleTiming.isTeletext(it) }
+    var expired by androidx.compose.runtime.remember(rawText) { androidx.compose.runtime.mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(rawText, liveTeletext) {
+        val line = rawText
+        if (liveTeletext && line != null) {
+            kotlinx.coroutines.delay(tv.own.owntv.translate.LiveSubtitleTiming.readingTimeMs(line))
+            expired = true
+        }
+    }
+    val shownText = if (expired) null else rawText
     // OwnTVnew: show the translation when subtitle translation is on.
-    val text = tv.own.owntv.translate.rememberTranslatedText(rawText)
+    val text = tv.own.owntv.translate.rememberTranslatedText(shownText)
     val settings = koinInject<SettingsRepository>()
     // Subtitle appearance (#96) — every option left on its own "Default" (and everything, while the
     // master toggle is off) resolves to the exact look this overlay has always had: white text on a

@@ -928,8 +928,21 @@ fun PlayerHud(
                 // Subtitle timing (plan §8): only when adjustment applies to the ACTIVE subtitle on the
                 // current engine (any mpv text sub; external side-loads on ExoPlayer).
                 subDelayMs = subDelay,
-                onAdjustSubDelay = if (player.subtitleTimingAvailable()) player::adjustSubtitleDelay else null,
-                onResetSubDelay = player::resetSubtitleDelay,
+                // OwnTVnew: also on live channels on mpv, remembered per channel.
+                onAdjustSubDelay = when {
+                    player.subtitleTimingAvailable() -> player::adjustSubtitleDelay
+                    tv.own.owntv.translate.LiveSubtitleTiming.available(player) -> { d ->
+                        player.adjustSubtitleDelay(d)
+                        tv.own.owntv.translate.LiveSubtitleTiming.save(subContext, player.currentMeta.value.title, player.subDelayMs.value)
+                    }
+                    else -> null
+                },
+                onResetSubDelay = {
+                    player.resetSubtitleDelay()
+                    if (tv.own.owntv.translate.LiveSubtitleTiming.available(player)) {
+                        tv.own.owntv.translate.LiveSubtitleTiming.save(subContext, player.currentMeta.value.title, 0)
+                    }
+                },
             )
         }
         HudDialog.SPEED -> SpeedDialog(current = speed, onSelect = { player.setSpeed(it); dialog = HudDialog.NONE }, onDismiss = { dialog = HudDialog.NONE })
