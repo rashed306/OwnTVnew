@@ -84,6 +84,8 @@ internal fun TrackDialog(
     // OwnTVnew: non-null on the Subtitles dialog → a TRANSLATE section (Off / English / Arabic).
     translateTarget: String? = null,
     onSelectTranslate: ((String?) -> Unit)? = null,
+    // OwnTVnew: each subtitle track's kind (Teletext / CC / Image / Text), by mpvId; empty = no labels.
+    kinds: Map<Int, tv.own.owntv.translate.SubtitleKind> = emptyMap(),
 ) {
     val focus = remember { FocusRequester() }
     BackHandler { onDismiss() }
@@ -127,7 +129,9 @@ internal fun TrackDialog(
             OptionRow(
                 // Image-based subs (PGS/VOBSUB/DVB) play via the ExoPlayer handoff on VOD — mark them so
                 // it's clear they're a different kind of track, but they're fully selectable.
-                label = if (!track.image) track.displayLabel() else stringResource(R.string.player_image_track, track.displayLabel()),
+                label = kinds[track.mpvId]?.let { kind ->
+                    stringResource(R.string.owntvnew_track_with_kind, track.displayLabel(), stringResource(kind.labelRes()))
+                } ?: if (!track.image) track.displayLabel() else stringResource(R.string.player_image_track, track.displayLabel()),
                 selected = track.selected,
                 modifier = if (focusThis) Modifier.focusRequester(focus) else Modifier,
                 onClick = { onSelect(track) },
@@ -469,4 +473,12 @@ private fun OptionRow(label: String, selected: Boolean, modifier: Modifier = Mod
 @Composable
 private fun ActionRow(label: String, icon: OwnTVIcon, onClick: () -> Unit) {
     tv.own.owntv.ui.stage.StagePopupOption(title = label, onClick = onClick, leading = { tv.own.owntv.ui.stage.StagePopupIcon(icon) })
+}
+
+/** OwnTVnew: the menu word for a subtitle kind. */
+private fun tv.own.owntv.translate.SubtitleKind.labelRes(): Int = when (this) {
+    tv.own.owntv.translate.SubtitleKind.TELETEXT -> R.string.owntvnew_sub_kind_teletext
+    tv.own.owntv.translate.SubtitleKind.CC -> R.string.owntvnew_sub_kind_cc
+    tv.own.owntv.translate.SubtitleKind.IMAGE -> R.string.owntvnew_sub_kind_image
+    tv.own.owntv.translate.SubtitleKind.TEXT -> R.string.owntvnew_sub_kind_text
 }

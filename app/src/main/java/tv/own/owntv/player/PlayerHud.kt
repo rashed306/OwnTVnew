@@ -908,6 +908,7 @@ fun PlayerHud(
             // dialog carries the subtitle-translation choice.
             val subContext = androidx.compose.ui.platform.LocalContext.current
             val translateTarget by tv.own.owntv.translate.SubtitleTranslator.target.collectAsStateWithLifecycle()
+            val subKinds = remember(subTracks) { tv.own.owntv.translate.SubtitleKinds.of(player) }
             TrackDialog(
                 stringResource(R.string.player_subtitles), subTracks,
                 onSelect = {
@@ -919,6 +920,7 @@ fun PlayerHud(
                     player.disableSubtitles(); dialog = HudDialog.NONE
                 },
                 translateTarget = translateTarget,
+                kinds = subKinds,
                 onSelectTranslate = { lang ->
                     tv.own.owntv.translate.SubtitleTranslator.setTarget(subContext, lang); dialog = HudDialog.NONE
                 },

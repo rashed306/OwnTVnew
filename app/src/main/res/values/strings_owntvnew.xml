@@ -8,4 +8,9 @@
     <string name="owntvnew_translate_downloading">Downloading translation (first time only)…</string>
     <string name="owntvnew_translate_detecting">Detecting subtitle language…</string>
     <string name="owntvnew_translate_failed">Translation unavailable: %1$s</string>
+    <string name="owntvnew_track_with_kind" translatable="false">%1$s · %2$s</string>
+    <string name="owntvnew_sub_kind_teletext">Teletext</string>
+    <string name="owntvnew_sub_kind_cc">CC</string>
+    <string name="owntvnew_sub_kind_image">Image</string>
+    <string name="owntvnew_sub_kind_text">Text</string>
 </resources>

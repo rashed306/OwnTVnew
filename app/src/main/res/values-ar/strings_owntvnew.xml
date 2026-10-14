@@ -7,4 +7,8 @@
     <string name="owntvnew_translate_downloading">جارٍ تنزيل الترجمة (مرة واحدة فقط)…</string>
     <string name="owntvnew_translate_detecting">جارٍ التعرّف على لغة النص…</string>
     <string name="owntvnew_translate_failed">الترجمة غير متاحة: %1$s</string>
+    <string name="owntvnew_sub_kind_teletext">تليتكست</string>
+    <string name="owntvnew_sub_kind_cc">CC</string>
+    <string name="owntvnew_sub_kind_image">صورة</string>
+    <string name="owntvnew_sub_kind_text">نص</string>
 </resources>
