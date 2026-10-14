@@ -138,7 +138,9 @@ jobs:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     env:
-      IS_TAG: ${{ startsWith(github.ref, 'refs/tags/v') }}
+      # OwnTVnew: every push to main is published as a release too (tag pushes are not available
+      # from the dev environment), so the TV can always fetch .../releases/latest/download/OwnTV.apk
+      IS_TAG: ${{ startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main' }}
       # Set at runtime via $GITHUB_ENV in the "Name the APK" step. Declared here (empty) so static
       # linters don't flag the later ${{ env.APK_OUT }} references as "context access might be invalid".
       APK_OUT: ""
@@ -167,9 +169,12 @@ jobs:
         run: |
           if [ "$IS_TAG" = "true" ]; then
             NAME="${GITHUB_REF_NAME#v}"                 # tag v1.2.0 -> 1.2.0
+            # OwnTVnew: a main-branch build is numbered from the run: 0.1.<run>
+            [ "$GITHUB_REF" = "refs/heads/main" ] && NAME="0.1.${GITHUB_RUN_NUMBER}"
             IFS='.' read -r MA MI PA <<< "$NAME"
             CODE=$(( ${MA:-0} * 10000 + ${MI:-0} * 100 + ${PA:-0} ))   # 1.2.0 -> 10200
             [ "$CODE" -gt 0 ] || CODE=1
+            [ "$GITHUB_REF" = "refs/heads/main" ] && CODE=$(( 1000 + GITHUB_RUN_NUMBER ))
           else
             # Dev (non-tag) builds mirror the local-build fallback in app/build.gradle.kts:
             # pinned HIGH so a dev APK always installs over any published release
@@ -325,6 +330,9 @@ jobs:
         if: env.IS_TAG == 'true'
         uses: softprops/action-gh-release@v3
         with:
+          tag_name: v${{ steps.ver.outputs.name }}
+          target_commitish: ${{ github.sha }}
+          make_latest: true
           name: OwnTV ${{ github.ref_name }}
           files: |
             dist/${{ env.APK_OUT }}
