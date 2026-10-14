@@ -681,8 +681,6 @@ fun PlayerHud(
             // Hide the transport (play/seek/prev/next) and bottom bar while an error is up — the error
             // overlay owns the screen with its own Retry, so the play/rewind/forward must not show behind it.
             if (error == null) {
-                CenterControls(player, nav, isPlaying, isLive, onRewindLive, onForwardLive, timeshiftOffset, playFocus, modifier = Modifier.align(Alignment.Center))
-
                 val reportDuration = duration.takeIf { it > 0 }?.let { formatTime(it) }
                 val reportSavedMessage = stringResource(R.string.player_report_saved)
 
@@ -726,6 +724,8 @@ fun PlayerHud(
                     onOpenDialog = { dialog = it }, onPip = onPip, onAudioMode = onAudioMode,
                     onMultiview = onMultiview, onRecordThis = onRecordThis, recordingThis = recordingThis, onBack = onBack,
                     modifier = Modifier.align(Alignment.BottomStart),
+                    // OwnTVnew: ⏮ ⏪ ⏯ ⏩ ⏭ live in the bar now; nothing is drawn over the picture.
+                    transport = { BottomTransport(player, nav, isPlaying, isLive, onRewindLive, onForwardLive, playFocus) },
                 )
             }
         }

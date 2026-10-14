@@ -276,41 +276,30 @@ internal fun ChannelNumberCard(digits: String, error: String? = null, modifier: 
 // ---------------- Center transport ----------------
 
 @Composable
-internal fun CenterControls(
+/**
+ * OwnTVnew: the transport, moved from the middle of the picture into the bottom bar (between the media
+ * and the tools clusters), so nothing sits over the video. ⏯ carries [playFocus], so opening the
+ * controls still lands on it. Live: ⏪/⏩ only where the channel can rewind (provider catch-up, or
+ * "Pause and rewind live TV"); films and episodes: seek by the Seek step, plus previous/next episode.
+ */
+internal fun BottomTransport(
     player: PlaybackEngine, nav: NavState, isPlaying: Boolean, isLive: Boolean,
-    onRewindLive: (() -> Unit)?, onForwardLive: (() -> Unit)?, timeshiftOffset: () -> Int?,
+    onRewindLive: (() -> Unit)?, onForwardLive: (() -> Unit)?,
     playFocus: FocusRequester, modifier: Modifier = Modifier,
 ) {
     val seekStep by player.seekStepMs.collectAsStateWithLifecycle() // Settings -> Seek step
-    val rewindMode = onRewindLive != null // this is a catch-up-capable Live channel
-    // Read here, not in the HUD root: it ticks every second while rewound (T14).
-    val timeshiftOffsetSec = timeshiftOffset()
-    val timeshifting = timeshiftOffsetSec != null
-    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        if (timeshifting) {
-            // Counts down as the archive catches up to the live edge; grows if you pause.
-            Text(
-                if (timeshiftOffsetSec <= 1) stringResource(R.string.player_at_live_edge) else stringResource(R.string.player_behind_live, mmss(timeshiftOffsetSec)),
-                style = MaterialTheme.typography.labelLarge,
-                color = hudAccent,
-            )
-            Spacer(Modifier.height(12.dp))
+    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        if (nav.hasPrev) CircleButton(OwnTVIcon.SKIP_PREVIOUS, size = 38) { player.previous() }
+        when {
+            onRewindLive != null -> CircleButton(OwnTVIcon.REWIND, size = 38) { onRewindLive() } // back into the archive / saved copy
+            !isLive -> CircleButton(OwnTVIcon.REWIND, size = 38) { player.seekBy(-seekStep) }
         }
-        TransportCapsule {
-            if (nav.hasPrev) CircleButton(OwnTVIcon.SKIP_PREVIOUS, size = 44) { player.previous() }
-            when {
-                rewindMode -> CircleButton(OwnTVIcon.REWIND, size = 44) { onRewindLive() } // step back into the archive
-                !isLive -> CircleButton(OwnTVIcon.REWIND, size = 44) { player.seekBy(-seekStep) }
-            }
-            CircleButton(if (isPlaying) OwnTVIcon.PAUSE else OwnTVIcon.PLAY, size = 64, primary = true, modifier = Modifier.focusRequester(playFocus)) { player.togglePlayPause() }
-            when {
-                rewindMode && timeshifting -> CircleButton(OwnTVIcon.FORWARD, size = 44) { onForwardLive?.invoke() } // toward live
-                !isLive && !rewindMode -> CircleButton(OwnTVIcon.FORWARD, size = 44) { player.seekBy(seekStep) }
-            }
-            // "Go to live" is no longer a transport button: it is the Go Live pill at the head of the
-            // dock's left cluster, beside the timeline it acts on.
-            if (nav.hasNext) CircleButton(OwnTVIcon.SKIP_NEXT, size = 44) { player.next() }
+        CircleButton(if (isPlaying) OwnTVIcon.PAUSE else OwnTVIcon.PLAY, size = 48, primary = true, modifier = Modifier.focusRequester(playFocus)) { player.togglePlayPause() }
+        when {
+            onRewindLive != null -> CircleButton(OwnTVIcon.FORWARD, size = 38) { onForwardLive?.invoke() } // toward live
+            !isLive -> CircleButton(OwnTVIcon.FORWARD, size = 38) { player.seekBy(seekStep) }
         }
+        if (nav.hasNext) CircleButton(OwnTVIcon.SKIP_NEXT, size = 38) { player.next() }
     }
 }
 
@@ -333,6 +322,8 @@ internal fun BottomBar(
     /** Given to whichever timeline is drawn, so Left/Right with the controls hidden can land on it (N6). */
     seekFocus: FocusRequester? = null,
     onBack: () -> Unit, modifier: Modifier = Modifier,
+    /** OwnTVnew: the transport, drawn centred in the gap between the two tool clusters. */
+    transport: @Composable () -> Unit = {},
 ) {
     // Changes only while rewound into the archive. The film position is read lower still, by
     // [VodTimeline], so the tool buttons do not redraw every second (T14).
@@ -428,7 +419,8 @@ internal fun BottomBar(
                     }
                 }
             }
-            Spacer(Modifier.weight(1f))
+            // OwnTVnew: the gap now carries the transport, centred between the clusters.
+            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) { transport() }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 // H2 — the ORDER is core's, exactly as in the media cluster above. Each control
                 // keeps its own composable and condition; only the sequence is shared.
