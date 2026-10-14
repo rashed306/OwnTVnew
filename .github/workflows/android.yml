@@ -109,6 +109,11 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
 
+      - name: Use the teletext libmpv engine (OwnTVnew)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash .github/scripts/fetch-libmpv.sh
+
       # One variant, not `test`/`lint` across every flavor: standard+debug is the variant the JVM
       # tests are written against, and the ABI flavors differ only in the packaged native libs.
       - name: Unit tests
@@ -163,6 +168,11 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
+
+      - name: Use the teletext libmpv engine (OwnTVnew)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash .github/scripts/fetch-libmpv.sh
 
       - name: Compute version (from the git tag on releases)
         id: ver

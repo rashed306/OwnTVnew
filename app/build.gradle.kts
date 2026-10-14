@@ -353,6 +353,17 @@ val verifyI18nLiterals = tasks.register<VerifyI18nLiterals>("verifyI18nLiterals"
 // Inputs are declared above, so an unchanged source tree makes this UP-TO-DATE and free.
 tasks.named("preBuild") { dependsOn(verifyI18nLiterals) }
 
+// OwnTVnew: when the build is pointed at a locally laid-out libmpv (CI fetches the teletext build from
+// rashed306/OwnTV_libmpv — .github/scripts/fetch-libmpv.sh), use it in place of the version
+// player-core pins. settings.gradle.kts already adds that folder as a repository for version "local".
+if (providers.gradleProperty("owntv.libmpvLocalRepo").orNull != null) {
+    configurations.configureEach {
+        resolutionStrategy.dependencySubstitution {
+            substitute(module("tv.own.owntv:libmpv")).using(module("tv.own.owntv:libmpv:local"))
+        }
+    }
+}
+
 dependencies {
     // The shared data/settings/sync module. It lives in its own repository now — see
     // https://github.com/ahXN00/OwnTV_Core. Set owntv.corePath in ~/.gradle/gradle.properties to
