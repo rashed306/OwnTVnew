@@ -26,10 +26,8 @@ name: i18n
 # locales.json and no Kotlin at all, so every check here would re-examine code identical to main.
 # android.yml's verify-pin job covers those pull requests instead.
 
+# OwnTVnew: upstream's translation-catalogue checks; manual only in this fork.
 on:
-  pull_request:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:

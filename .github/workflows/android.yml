@@ -114,12 +114,12 @@ jobs:
       - name: Unit tests
         run: |
           chmod +x ./gradlew
-          ./gradlew testStandardDebugUnitTest --stacktrace
+          bash .github/scripts/gradlew-annotated.sh testStandardDebugUnitTest --stacktrace
 
       # abortOnError = true in app/build.gradle.kts, so this fails the job on a lint error.
       - name: Lint
         if: always()   # report both verdicts in one run instead of one failure at a time
-        run: ./gradlew lintStandardDebug --stacktrace
+        run: bash .github/scripts/gradlew-annotated.sh lintStandardDebug --stacktrace
 
       - name: Upload test and lint reports
         if: always()   # the reports matter most when the step above failed
@@ -252,7 +252,7 @@ jobs:
             echo "X86_SRC=$X86_SRC" >> "$GITHUB_ENV"
           else
             echo "Building debug APK"
-            ./gradlew assembleDebug
+            bash .github/scripts/gradlew-annotated.sh assembleDebug
             # Debug also builds both flavors; standard (arm) is the one most likely to be tested on a
             # real device. Surface it as the primary artifact; x86_64 debug is still in its folder.
             SRC=$(ls app/build/outputs/apk/standard/debug/*.apk | head -n1)

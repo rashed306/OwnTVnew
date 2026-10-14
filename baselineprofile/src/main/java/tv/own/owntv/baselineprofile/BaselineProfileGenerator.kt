@@ -116,7 +116,7 @@ class BaselineProfileGenerator {
     }
 
     private companion object {
-        const val PACKAGE = "tv.own.owntv"
+        const val PACKAGE = "tv.own.owntvnew"
         const val NAV_ITEMS = 6
         const val SCROLL_STEPS = 8
         const val SETTLE_MS = 350L
