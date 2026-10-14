@@ -81,6 +81,9 @@ internal fun TrackDialog(
     subDelayMs: Int = 0,
     onAdjustSubDelay: ((Int) -> Unit)? = null,
     onResetSubDelay: () -> Unit = {},
+    // OwnTVnew: non-null on the Subtitles dialog → a TRANSLATE section (Off / English / Arabic).
+    translateTarget: String? = null,
+    onSelectTranslate: ((String?) -> Unit)? = null,
 ) {
     val focus = remember { FocusRequester() }
     BackHandler { onDismiss() }
@@ -129,6 +132,25 @@ internal fun TrackDialog(
                 modifier = if (focusThis) Modifier.focusRequester(focus) else Modifier,
                 onClick = { onSelect(track) },
             )
+        }
+        // OwnTVnew: TRANSLATE (subtitles dialog) — live on-device translation of the shown subtitles.
+        if (onSelectTranslate != null) {
+            item { tv.own.owntv.ui.stage.StagePopupLabel(stringResource(R.string.owntvnew_translate_subtitles), Modifier.padding(top = 12.mpx)) }
+            item { OptionRow(label = stringResource(R.string.common_off), selected = translateTarget == null, onClick = { onSelectTranslate(null) }) }
+            item {
+                OptionRow(
+                    label = stringResource(R.string.owntvnew_translate_to_english),
+                    selected = translateTarget == tv.own.owntv.translate.SubtitleTranslator.TARGET_ENGLISH,
+                    onClick = { onSelectTranslate(tv.own.owntv.translate.SubtitleTranslator.TARGET_ENGLISH) },
+                )
+            }
+            item {
+                OptionRow(
+                    label = stringResource(R.string.owntvnew_translate_to_arabic),
+                    selected = translateTarget == tv.own.owntv.translate.SubtitleTranslator.TARGET_ARABIC,
+                    onClick = { onSelectTranslate(tv.own.owntv.translate.SubtitleTranslator.TARGET_ARABIC) },
+                )
+            }
         }
         // ADD SUBTITLES (subtitles dialog, movie/episode only) — OpenSubtitles search + local file (§4/§7).
         if (onSearchSubtitles != null || onSelectLocalSubtitle != null) {

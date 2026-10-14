@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="owntvnew_translate_subtitles">الترجمة الفورية للنصوص</string>
+    <string name="owntvnew_translate_to_english">English (الإنجليزية)</string>
+    <string name="owntvnew_translate_to_arabic">العربية</string>
+</resources>

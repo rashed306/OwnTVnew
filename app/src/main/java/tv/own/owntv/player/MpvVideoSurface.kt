@@ -266,6 +266,8 @@ private fun StyledSubtitleView(cues: List<androidx.media3.common.text.Cue>, modi
     val customFont = styleOn && font != null
     val customPosition = if (styleOn) position else SubtitleStyle.Position.DEFAULT
     val textScale = if (styleOn) scale else SubtitleStyle.SCALE_DEFAULT
+    // OwnTVnew: translated cues when subtitle translation is on (bitmap cues pass through).
+    val shownCues = tv.own.owntv.translate.rememberTranslatedCues(cues)
 
     AndroidView(
         modifier = modifier,
@@ -290,7 +292,7 @@ private fun StyledSubtitleView(cues: List<androidx.media3.common.text.Cue>, modi
             }
             view.setFractionalTextSize(androidx.media3.ui.SubtitleView.DEFAULT_TEXT_SIZE_FRACTION * textScale)
             view.setCues(
-                if (customPosition == SubtitleStyle.Position.DEFAULT) cues else cues.map { anchor(it, customPosition) },
+                if (customPosition == SubtitleStyle.Position.DEFAULT) shownCues else shownCues.map { anchor(it, customPosition) },
             )
         },
     )

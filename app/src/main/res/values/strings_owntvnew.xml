@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- OwnTVnew fork additions. English and Arabic only; other locales fall back to English. -->
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="owntvnew_translate_subtitles">Translate subtitles</string>
+    <string name="owntvnew_translate_to_english">English</string>
+    <string name="owntvnew_translate_to_arabic">العربية (Arabic)</string>
+</resources>

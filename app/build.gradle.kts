@@ -363,6 +363,10 @@ dependencies {
     // so the mobile shell drives the same engine. Always on the same version as core.
     implementation(libs.owntv.player.core)
 
+    // OwnTVnew: on-device subtitle translation + language detection (Google ML Kit).
+    implementation("com.google.mlkit:translate:17.0.3")
+    implementation("com.google.mlkit:language-id:17.0.6")
+
     // Core
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

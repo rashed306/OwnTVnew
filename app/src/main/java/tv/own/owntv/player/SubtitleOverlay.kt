@@ -40,7 +40,9 @@ fun SubtitleOverlay(
     /** Shrinks text and insets so the same overlay fits the docked mini-player (F19b); 1f = full screen. */
     sizeScale: Float = 1f,
 ) {
-    val text by player.subText.collectAsStateWithLifecycle()
+    val rawText by player.subText.collectAsStateWithLifecycle()
+    // OwnTVnew: show the translation when subtitle translation is on.
+    val text = tv.own.owntv.translate.rememberTranslatedText(rawText)
     val settings = koinInject<SettingsRepository>()
     // Subtitle appearance (#96) — every option left on its own "Default" (and everything, while the
     // master toggle is off) resolves to the exact look this overlay has always had: white text on a

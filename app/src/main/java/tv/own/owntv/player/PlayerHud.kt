@@ -226,6 +226,9 @@ fun PlayerHud(
     liveLeftRightRewinds: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
+    // OwnTVnew: keep the viewer's subtitle choice across channels (own restart scope, so its flows
+    // never recompose this root).
+    tv.own.owntv.translate.StickySubtitles(player)
     // T14 — nothing that ticks is read in this root scope: with the controls hidden it used to recompose
     // the whole HUD once a second for a position nobody could see. The offset, the archive clock and the
     // position are handed down as lambdas and read by the piece that draws them.
@@ -901,10 +904,24 @@ fun PlayerHud(
                 }
             }
             val subDelay by player.subDelayMs.collectAsStateWithLifecycle()
+            // OwnTVnew: the pick is also remembered globally (follows you to the next channel), and the
+            // dialog carries the subtitle-translation choice.
+            val subContext = androidx.compose.ui.platform.LocalContext.current
+            val translateTarget by tv.own.owntv.translate.SubtitleTranslator.target.collectAsStateWithLifecycle()
             TrackDialog(
                 stringResource(R.string.player_subtitles), subTracks,
-                onSelect = { player.selectSubtitle(it.mpvId); dialog = HudDialog.NONE },
-                onOff = { player.disableSubtitles(); dialog = HudDialog.NONE },
+                onSelect = {
+                    tv.own.owntv.translate.SubtitleChoice.rememberTrack(subContext, it)
+                    player.selectSubtitle(it.mpvId); dialog = HudDialog.NONE
+                },
+                onOff = {
+                    tv.own.owntv.translate.SubtitleChoice.rememberOff(subContext)
+                    player.disableSubtitles(); dialog = HudDialog.NONE
+                },
+                translateTarget = translateTarget,
+                onSelectTranslate = { lang ->
+                    tv.own.owntv.translate.SubtitleTranslator.setTarget(subContext, lang); dialog = HudDialog.NONE
+                },
                 onDismiss = { dialog = HudDialog.NONE },
                 onSearchSubtitles = onSearchSubtitles?.let { open -> { dialog = HudDialog.NONE; open() } },
                 onSelectLocalSubtitle = onSelectLocalSubtitle?.let { open -> { dialog = HudDialog.NONE; open() } },
