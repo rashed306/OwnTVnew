@@ -11,7 +11,14 @@ import com.google.mlkit.nl.translate.TranslateLanguage
 import com.google.mlkit.nl.translate.Translation
 import com.google.mlkit.nl.translate.Translator
 import com.google.mlkit.nl.translate.TranslatorOptions
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -44,9 +51,24 @@ object SubtitleTranslator {
     /** Target language code, or null when translation is off. */
     val target: StateFlow<String?> = _target.asStateFlow()
 
-    /** True while a translation model is being downloaded (first use of a language pair). */
-    private val _downloading = MutableStateFlow(false)
-    val downloading: StateFlow<Boolean> = _downloading.asStateFlow()
+    /** What the translator is doing, for the on-screen status line. */
+    enum class Status { OK, DOWNLOADING, DETECTING, FAILED }
+    private val _status = MutableStateFlow(Status.OK)
+    val status: StateFlow<Status> = _status.asStateFlow()
+    /** Reason of the last failure, shown with [Status.FAILED]. */
+    @Volatile var lastError: String? = null
+        private set
+
+    /** The newest finished translation and the subtitle text it was made from. */
+    data class Translated(val source: String, val text: String)
+    private val _latest = MutableStateFlow<Translated?>(null)
+    val latest: StateFlow<Translated?> = _latest.asStateFlow()
+
+    // Lines waiting to be translated. One worker takes them in order, always jumping to the newest
+    // (conflate) and never being interrupted: live captions change many times a second, and a
+    // translation or a model download that restarted on every change would never finish.
+    private val pending = MutableStateFlow<String?>(null)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     @Volatile private var prefs: SharedPreferences? = null
     private val cache = LruCache<String, String>(400)
@@ -66,9 +88,36 @@ object SubtitleTranslator {
 
     fun init(context: Context) {
         if (prefs != null) return
-        val p = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        prefs = p
-        _target.value = p.getString(KEY_TARGET, null)?.takeIf { it in TARGETS }
+        synchronized(this) {
+            if (prefs != null) return
+            val p = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            _target.value = p.getString(KEY_TARGET, null)?.takeIf { it in TARGETS }
+            prefs = p
+            scope.launch { pending.filterNotNull().conflate().collect { work(it) } }
+        }
+    }
+
+    /** Queue [text] for translation; the result arrives in [latest]. */
+    fun request(text: String) {
+        if (_target.value != null && text.isNotBlank()) pending.value = text
+    }
+
+    private suspend fun work(text: String) {
+        if (_target.value == null) return
+        try {
+            val out = translate(text)
+            if (out == null) {
+                _status.value = Status.DETECTING
+            } else {
+                _latest.value = Translated(text, out)
+                _status.value = Status.OK
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            lastError = e.message ?: e.javaClass.simpleName
+            _status.value = Status.FAILED
+        }
     }
 
     fun setTarget(context: Context, lang: String?) {
@@ -76,6 +125,9 @@ object SubtitleTranslator {
         val value = lang?.takeIf { it in TARGETS }
         _target.value = value
         prefs?.edit()?.putString(KEY_TARGET, value)?.apply()
+        _latest.value = null
+        _status.value = Status.OK
+        pending.value = null
         resetSource()
     }
 
@@ -112,6 +164,23 @@ object SubtitleTranslator {
         return out
     }
 
+    /**
+     * Whether subtitle [cur] continues [prev] — the same caption growing word by word, or rolling up
+     * a row — so the translation of [prev] may stand in until [cur]'s own is ready.
+     */
+    fun continues(prev: String, cur: String): Boolean {
+        val p = normalize(prev).lowercase()
+        val c = normalize(cur).lowercase()
+        if (p.isEmpty() || c.isEmpty()) return false
+        if (c.startsWith(p) || p.startsWith(c)) return true
+        val tail = p.takeLast(CONTINUE_CHARS)
+        val head = c.take(CONTINUE_CHARS)
+        return (tail.length == CONTINUE_CHARS && c.contains(tail)) ||
+            (head.length == CONTINUE_CHARS && p.contains(head))
+    }
+
+    private const val CONTINUE_CHARS = 12
+
     private fun cacheKey(tgt: String, text: String) = tgt + '\u0000' + text
 
     private suspend fun sourceFor(text: String): String? {
@@ -139,13 +208,9 @@ object SubtitleTranslator {
         if (key in readyModels) return
         modelLock.withLock {
             if (key in readyModels) return
-            _downloading.value = true
-            try {
-                translator.downloadModelIfNeeded(DownloadConditions.Builder().build()).await()
-                readyModels.add(key)
-            } finally {
-                _downloading.value = false
-            }
+            _status.value = Status.DOWNLOADING
+            translator.downloadModelIfNeeded(DownloadConditions.Builder().build()).await()
+            readyModels.add(key)
         }
     }
 

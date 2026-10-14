@@ -4,4 +4,7 @@
     <string name="owntvnew_translate_to_english">English (الإنجليزية)</string>
     <string name="owntvnew_translate_to_arabic">العربية</string>
     <string name="owntvnew_translate_to_spanish">Español (الإسبانية)</string>
+    <string name="owntvnew_translate_downloading">جارٍ تنزيل الترجمة (مرة واحدة فقط)…</string>
+    <string name="owntvnew_translate_detecting">جارٍ التعرّف على لغة النص…</string>
+    <string name="owntvnew_translate_failed">الترجمة غير متاحة: %1$s</string>
 </resources>

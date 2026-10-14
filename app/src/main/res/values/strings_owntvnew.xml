@@ -5,4 +5,7 @@
     <string name="owntvnew_translate_to_english">English</string>
     <string name="owntvnew_translate_to_arabic">العربية (Arabic)</string>
     <string name="owntvnew_translate_to_spanish">Español (Spanish)</string>
+    <string name="owntvnew_translate_downloading">Downloading translation (first time only)…</string>
+    <string name="owntvnew_translate_detecting">Detecting subtitle language…</string>
+    <string name="owntvnew_translate_failed">Translation unavailable: %1$s</string>
 </resources>

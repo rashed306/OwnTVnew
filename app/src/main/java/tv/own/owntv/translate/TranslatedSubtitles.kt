@@ -3,36 +3,49 @@ package tv.own.owntv.translate
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.text.Cue
-import kotlinx.coroutines.delay
+import tv.own.owntv.R
 
 /**
- * OwnTVnew: the subtitle line to show for [text] — its translation when translation is on and ready,
- * otherwise the original. Roll-up captions change word by word, so a new line waits a moment to settle
- * before it is translated; a cached line is shown at once.
+ * OwnTVnew: the subtitle line to show for [text] while translation is on.
+ *
+ * - Its translation, as soon as there is one.
+ * - While a line is still being translated: the previous translation if this line continues it
+ *   (captions that build up word by word), otherwise nothing — never a flash of the original.
+ * - The original only when translation cannot happen (model still downloading, language not
+ *   detected, an error), with a short status line saying why.
+ *
+ * Returns [text] unchanged when translation is off.
  */
 @Composable
 fun rememberTranslatedText(text: String?): String? {
     val context = LocalContext.current
     remember(context) { SubtitleTranslator.init(context); true }
     val target by SubtitleTranslator.target.collectAsStateWithLifecycle()
-    var shown by remember { mutableStateOf(text) }
+    val latest by SubtitleTranslator.latest.collectAsStateWithLifecycle()
+    val status by SubtitleTranslator.status.collectAsStateWithLifecycle()
     LaunchedEffect(text, target) {
-        if (target == null || text.isNullOrBlank()) {
-            shown = text
-            return@LaunchedEffect
-        }
-        SubtitleTranslator.cached(text)?.let { shown = it; return@LaunchedEffect }
-        delay(SETTLE_MS)
-        val out = runCatching { SubtitleTranslator.translate(text) }.getOrNull()
-        shown = out ?: text
+        if (target != null && !text.isNullOrBlank()) SubtitleTranslator.request(text)
     }
-    return if (target == null) text else shown
+    if (target == null || text.isNullOrBlank()) return text
+
+    SubtitleTranslator.cached(text)?.let { return it }
+    val done = latest
+    if (done != null && SubtitleTranslator.continues(done.source, text)) return done.text
+
+    val note = when (status) {
+        SubtitleTranslator.Status.DOWNLOADING -> stringResource(R.string.owntvnew_translate_downloading)
+        SubtitleTranslator.Status.DETECTING -> stringResource(R.string.owntvnew_translate_detecting)
+        SubtitleTranslator.Status.FAILED ->
+            stringResource(R.string.owntvnew_translate_failed, SubtitleTranslator.lastError.orEmpty())
+        SubtitleTranslator.Status.OK -> null
+    }
+    // Waiting on a quick translation: show nothing rather than the original for a split second.
+    return if (note == null) null else text + '\n' + note
 }
 
 /**
@@ -47,10 +60,9 @@ fun rememberTranslatedCues(cues: List<Cue>): List<Cue> {
     val textCues = cues.filter { it.bitmap == null && !it.text.isNullOrBlank() }
     val joined = textCues.joinToString(" ") { it.text.toString() }.trim()
     val translated = rememberTranslatedText(joined.ifEmpty { null })
-    if (target == null || textCues.isEmpty() || translated.isNullOrBlank()) return cues
+    if (target == null || textCues.isEmpty()) return cues
     return remember(cues, translated) {
-        cues.filter { it.bitmap != null } + Cue.Builder().setText(translated).build()
+        val images = cues.filter { it.bitmap != null }
+        if (translated.isNullOrBlank()) images else images + Cue.Builder().setText(translated).build()
     }
 }
-
-private const val SETTLE_MS = 150L
