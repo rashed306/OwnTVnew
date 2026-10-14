@@ -32,7 +32,8 @@ import kotlin.coroutines.resumeWithException
 object SubtitleTranslator {
     const val TARGET_ENGLISH = TranslateLanguage.ENGLISH
     const val TARGET_ARABIC = TranslateLanguage.ARABIC
-    private val TARGETS = setOf(TARGET_ENGLISH, TARGET_ARABIC)
+    const val TARGET_SPANISH = TranslateLanguage.SPANISH
+    private val TARGETS = setOf(TARGET_ENGLISH, TARGET_ARABIC, TARGET_SPANISH)
 
     private const val PREFS = "owntvnew_subtitle_translation"
     private const val KEY_TARGET = "target"

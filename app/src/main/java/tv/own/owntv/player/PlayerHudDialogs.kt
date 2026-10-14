@@ -151,6 +151,13 @@ internal fun TrackDialog(
                     onClick = { onSelectTranslate(tv.own.owntv.translate.SubtitleTranslator.TARGET_ARABIC) },
                 )
             }
+            item {
+                OptionRow(
+                    label = stringResource(R.string.owntvnew_translate_to_spanish),
+                    selected = translateTarget == tv.own.owntv.translate.SubtitleTranslator.TARGET_SPANISH,
+                    onClick = { onSelectTranslate(tv.own.owntv.translate.SubtitleTranslator.TARGET_SPANISH) },
+                )
+            }
         }
         // ADD SUBTITLES (subtitles dialog, movie/episode only) — OpenSubtitles search + local file (§4/§7).
         if (onSearchSubtitles != null || onSelectLocalSubtitle != null) {

@@ -4,4 +4,5 @@
     <string name="owntvnew_translate_subtitles">Translate subtitles</string>
     <string name="owntvnew_translate_to_english">English</string>
     <string name="owntvnew_translate_to_arabic">العربية (Arabic)</string>
+    <string name="owntvnew_translate_to_spanish">Español (Spanish)</string>
 </resources>
