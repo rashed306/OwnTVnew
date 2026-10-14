@@ -44,7 +44,8 @@ android {
     }
 
     defaultConfig {
-        applicationId = "tv.own.owntv"
+        // OwnTVnew: own package id, so it installs alongside the original OwnTV for side-by-side tests.
+        applicationId = "tv.own.owntvnew"
         minSdk = 26
         targetSdk = 36
         // CI injects these from the git tag (see .github/workflows/android.yml) so releases never
@@ -144,6 +145,16 @@ android {
                 keyPassword = signingValue("KEY_PASSWORD", "owntv.keyPassword")
             }
         }
+        // OwnTVnew: one fixed key for every debug build, so each new CI APK installs straight over
+        // the previous one (the runner's throwaway debug key changes per build and forces an
+        // uninstall that wipes playlists/settings). Dev-only sideload key, deliberately committed.
+        create("fixedDebug") {
+            storeFile = file("signing/owntvnew-dev.p12")
+            storeType = "pkcs12"
+            storePassword = "owntvnew-dev"
+            keyAlias = "owntvnew"
+            keyPassword = "owntvnew-dev"
+        }
     }
 
     testOptions {
@@ -160,6 +171,7 @@ android {
             // block at the bottom of this file (see docs/internationalization.md 0b, "Pseudolocales must
             // survive the filter").
             isPseudoLocalesEnabled = true
+            signingConfig = signingConfigs.getByName("fixedDebug")
         }
         release {
             // Stable AGP release optimization API. Keep both code and resource shrinking enabled;
