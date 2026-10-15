@@ -913,7 +913,8 @@ fun PlayerHud(
             // on each row: green once that track has shown subtitles on this channel.
             val subRows = remember(subTracks) { subtitleRows(subTracks) }
             val notesVersion by tv.own.owntv.translate.ChannelNotes.version.collectAsStateWithLifecycle()
-            val subChannel = player.currentMeta.value.title?.takeIf { player.isLiveContent }
+            val subMeta by player.currentMeta.collectAsStateWithLifecycle()
+            val subChannel = subMeta.title?.takeIf { player.isLiveContent }
             val subDots = remember(subRows, notesVersion, subChannel) {
                 subChannel?.let { ch ->
                     subRows.map { r ->
