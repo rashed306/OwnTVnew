@@ -382,6 +382,9 @@ dependencies {
     // OwnTVnew: on-device subtitle translation + language detection (Google ML Kit).
     implementation("com.google.mlkit:translate:17.0.3")
     implementation("com.google.mlkit:language-id:17.0.6")
+    // OwnTVnew: reads picture subtitles (DVB) so they can be translated. Bundled Latin model — works
+    // without Google Play services on the box.
+    implementation("com.google.mlkit:text-recognition:16.0.1")
 
     // Core
     implementation(libs.androidx.core.ktx)

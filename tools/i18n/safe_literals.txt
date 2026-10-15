@@ -896,6 +896,7 @@
 1	preference-key	app/src/main/java/tv/own/owntv/translate/ChannelNotes.kt	r:
 1	preference-key	app/src/main/java/tv/own/owntv/translate/ChannelNotes.kt	s:
 1	preference-key	app/src/main/java/tv/own/owntv/translate/ChannelNotes.kt	t:
+1	empty	app/src/main/java/tv/own/owntv/translate/ImageSubtitleOcr.kt	\0
 1	preference-key	app/src/main/java/tv/own/owntv/translate/LiveSubtitleTiming.kt	owntvnew_live_sub_delay
 1	protocol	app/src/main/java/tv/own/owntv/translate/LiveSubtitleTiming.kt	teletext
 1	protocol	app/src/main/java/tv/own/owntv/translate/StickySubtitles.kt	,

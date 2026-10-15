@@ -903,7 +903,9 @@ fun PlayerHud(
                     subTracks = player.textTracks()
                 }
             }
-            val subDelay by player.subDelayMs.collectAsStateWithLifecycle()
+            val subDelayMpv by player.subDelayMs.collectAsStateWithLifecycle()
+            val subDelayExo by tv.own.owntv.player.SubtitleTimeShift.offsetMs.collectAsStateWithLifecycle()
+            val subDelay = if (player is tv.own.owntv.player.LivePreviewEngine) subDelayExo else subDelayMpv
             // OwnTVnew: the pick is also remembered globally (follows you to the next channel), and the
             // dialog carries the subtitle-translation choice.
             val subContext = androidx.compose.ui.platform.LocalContext.current
@@ -954,15 +956,15 @@ fun PlayerHud(
                 onAdjustSubDelay = when {
                     player.subtitleTimingAvailable() -> player::adjustSubtitleDelay
                     tv.own.owntv.translate.LiveSubtitleTiming.available(player) -> { d ->
-                        player.adjustSubtitleDelay(d)
-                        tv.own.owntv.translate.LiveSubtitleTiming.save(subContext, player.currentMeta.value.title, player.subDelayMs.value)
+                        tv.own.owntv.translate.LiveSubtitleTiming.adjust(subContext, player, subMeta.title, d)
                     }
                     else -> null
                 },
                 onResetSubDelay = {
-                    player.resetSubtitleDelay()
                     if (tv.own.owntv.translate.LiveSubtitleTiming.available(player)) {
-                        tv.own.owntv.translate.LiveSubtitleTiming.save(subContext, player.currentMeta.value.title, 0)
+                        tv.own.owntv.translate.LiveSubtitleTiming.reset(subContext, player, subMeta.title)
+                    } else {
+                        player.resetSubtitleDelay()
                     }
                 },
             )

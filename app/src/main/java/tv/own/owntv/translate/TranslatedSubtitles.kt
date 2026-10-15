@@ -3,6 +3,7 @@ package tv.own.owntv.translate
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -60,9 +61,18 @@ fun rememberTranslatedCues(cues: List<Cue>): List<Cue> {
     val textCues = cues.filter { it.bitmap == null && !it.text.isNullOrBlank() }
     val joined = textCues.joinToString(" ") { it.text.toString() }.trim()
     val translated = rememberTranslatedText(joined.ifEmpty { null })
-    if (target == null || textCues.isEmpty()) return cues
-    return remember(cues, translated) {
-        val images = cues.filter { it.bitmap != null }
-        if (translated.isNullOrBlank()) images else images + Cue.Builder().setText(translated).build()
+    // OwnTVnew: picture subtitles are read (OCR), translated and drawn as coloured text. Nothing is
+    // shown while that runs (no flash of the original); the pictures come back only if it fails.
+    val images = cues.filter { it.bitmap != null }
+    val imagesShown by produceState<List<Cue>?>(initialValue = null, images, target) {
+        value = null
+        if (target == null || images.isEmpty()) return@produceState
+        value = runCatching { ImageSubtitleOcr.translateCues(images) }.getOrNull() ?: images
+    }
+    if (target == null || (textCues.isEmpty() && images.isEmpty())) return cues
+    val imagePart = if (images.isEmpty()) emptyList() else imagesShown.orEmpty()
+    return remember(cues, translated, imagePart) {
+        if (translated.isNullOrBlank() || textCues.isEmpty()) imagePart
+        else imagePart + Cue.Builder().setText(translated).build()
     }
 }
