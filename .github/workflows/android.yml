@@ -114,6 +114,9 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash .github/scripts/fetch-libmpv.sh
 
+      - name: Use the OwnTV_Core fork (OwnTVnew)
+        run: bash .github/scripts/fetch-core.sh
+
       # One variant, not `test`/`lint` across every flavor: standard+debug is the variant the JVM
       # tests are written against, and the ABI flavors differ only in the packaged native libs.
       - name: Unit tests
@@ -173,6 +176,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash .github/scripts/fetch-libmpv.sh
+
+      - name: Use the OwnTV_Core fork (OwnTVnew)
+        run: bash .github/scripts/fetch-core.sh
 
       - name: Compute version (from the git tag on releases)
         id: ver
