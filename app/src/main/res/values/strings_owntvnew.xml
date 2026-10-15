@@ -13,4 +13,6 @@
     <string name="owntvnew_sub_kind_cc">CC</string>
     <string name="owntvnew_sub_kind_image">Image</string>
     <string name="owntvnew_sub_kind_text">Text</string>
+    <string name="owntvnew_tag_sub">SUB</string>
+    <string name="owntvnew_tag_fps">%1$dfps</string>
 </resources>

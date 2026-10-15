@@ -53,10 +53,17 @@ object SubtitleChoice {
         val label = p.getString(KEY_LABEL, null)
         val pick = tracks.firstOrNull { cc && isClosedCaption(it) }
             ?: tracks.firstOrNull { lang != null && it.lang != null && normalizeLang(it.lang!!) == lang }
+            // OwnTVnew: a teletext stream listing several languages ("deu,eng"); its page is then
+            // chosen by [SubtitleWatch] from the remembered language.
+            ?: tracks.firstOrNull { t -> lang != null && t.lang?.split(LANG_LIST_SEP)?.any { normalizeLang(it) == lang } == true }
             ?: tracks.firstOrNull { label != null && it.label == label }
             ?: return
         player.selectSubtitle(pick.mpvId)
     }
+
+    /** The language of the last subtitle picked in the menu (normalised), if subtitles are on. */
+    fun rememberedLang(context: Context): String? =
+        prefs(context).takeIf { it.getBoolean(KEY_ON, false) }?.getString(KEY_LANG, null)
 
     internal fun isClosedCaption(track: TrackOption): Boolean {
         val codec = track.codec?.lowercase().orEmpty()
@@ -72,6 +79,7 @@ object SubtitleChoice {
         return c
     }
 
+    private const val LANG_LIST_SEP = ","
     private val CC_CODEC_MARKERS = listOf("608", "708", "eia")
     private val CC_LABEL = Regex("""\bCC\d?\b""")
     private val BIBLIOGRAPHIC = mapOf(

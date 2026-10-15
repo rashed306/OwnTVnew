@@ -160,8 +160,18 @@ internal fun LiveStageRow(
             )
         }
         LivePlate(channel.displayLogoUrl, 76.mpx, 54.mpx)
+        // OwnTVnew: what this channel showed when it last played — subtitles, picture class, smoothness.
+        val notesContext = androidx.compose.ui.platform.LocalContext.current
+        val notesVersion by tv.own.owntv.translate.ChannelNotes.version.collectAsStateWithLifecycle()
+        val notes = remember(channel.name, notesVersion) { tv.own.owntv.translate.ChannelNotes.tags(notesContext, channel.name) }
         Column(Modifier.weight(1f)) {
-            Text(name.name, style = stageText(22, 700), color = if (focused) StageColors.FxText else StageColors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.mpx), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    name.name, style = stageText(22, 700), color = if (focused) StageColors.FxText else StageColors.Text,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
+                )
+                ChannelNoteTags(notes)
+            }
             val title = now?.title ?: nowTitle
             if (title != null) {
                 val left = now?.let { timeLeftText(minutesLeft(it)) }
@@ -182,7 +192,8 @@ internal fun LiveStageRow(
         }
         if (trailing != null) trailing()
         else Row(horizontalArrangement = Arrangement.spacedBy(8.mpx), verticalAlignment = Alignment.CenterVertically) {
-            name.tags.forEach { StageTag(it) }
+            // A measured picture class replaces the provider's own quality word, so it is not said twice.
+            name.tags.filterNot { notes.res != null && it in PROVIDER_RES_TAGS }.forEach { StageTag(it) }
             if (channel.catchup) OwnTVIcon(OwnTVIcon.REWIND, StageColors.Dim, Modifier.size(22.mpx))
             if (isFavorite) OwnTVIcon(OwnTVIcon.FAVORITE, stageAccent.accent, Modifier.size(22.mpx), filled = true)
             mark?.let { StagePlaylistMark(it) }
@@ -657,5 +668,18 @@ private fun LiveColumnItem(
             entry.count?.let { Text(tv.own.owntv.ui.components.formatCount(it), style = stageText(15, 700), color = on ?: StageColors.Dim, maxLines = 1, overflow = TextOverflow.Ellipsis) }
             entry.mark?.let { m -> Box(Modifier.size(7.mpx).background(m.shownColor, RoundedCornerShape(50))) }
         }
+    }
+}
+
+/** OwnTVnew: provider quality words that a measured resolution tag stands in for. */
+private val PROVIDER_RES_TAGS = setOf("SD", "HD", "FHD", "UHD", "4K")
+
+/** OwnTVnew: SUB, HD / FHD / 4K and 50 / 60 fps — each only when this channel has shown it. */
+@Composable
+private fun ChannelNoteTags(notes: tv.own.owntv.translate.ChannelNotes.Tags) {
+    if (notes.sub) StageTag(stringResource(R.string.owntvnew_tag_sub))
+    notes.res?.let { StageTag(it) }
+    notes.fps?.takeIf { it >= tv.own.owntv.translate.ChannelNotes.FPS_TAG_MIN }?.let {
+        StageTag(stringResource(R.string.owntvnew_tag_fps, it))
     }
 }

@@ -1591,6 +1591,10 @@ fun OwnTVShell(
             // Direct render mode: mpv can't draw subtitles on the decoder-owned surface — the app does.
             // Also drawn docked (F19b): the mini-player is a real watching mode for a subtitled film, and
             // dropping the only line of dialogue there made subtitles look broken. Scaled to the box.
+            // OwnTVnew: learn the channel's tags (SUB, HD, fps) while it plays, and keep empty CC from
+            // slowing the picture down on mpv.
+            if (liveOnExo) tv.own.owntv.translate.SubtitleWatch.Exo(liveVm.previewEngine)
+            else tv.own.owntv.translate.SubtitleWatch.Mpv(player)
             if (!liveOnExo) {
                 tv.own.owntv.player.SubtitleOverlay(
                     player = player, modifier = Modifier.fillMaxSize(),

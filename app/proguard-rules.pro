@@ -22,3 +22,12 @@
 #     EpgAutoRefresh, PlaylistAutoRefresh, ...) round-trip through Enum.name/valueOf.
 #     Renaming a constant would silently reset settings and break old backups. ---
 -keep enum tv.own.owntv.** { *; }
+
+# --- OwnTVnew: player internals reached by name (translate/SubtitleWatch.kt MpvAccess,
+#     translate/SubtitleKinds.kt). Each lookup fails quietly, but would then do nothing. ---
+-keepclassmembers class tv.own.owntv.player.MpvPlaybackEngine { *** p; }
+-keepclassmembers class tv.own.owntv.player.OwnTVPlayer {
+    *** mpv;
+    void setCcSoftwareOverride(boolean);
+}
+-keepclassmembers class tv.own.owntv.player.LivePreviewEngine { *** player; }

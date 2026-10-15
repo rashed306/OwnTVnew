@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.background
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -86,6 +88,9 @@ internal fun TrackDialog(
     onSelectTranslate: ((String?) -> Unit)? = null,
     // OwnTVnew: each subtitle track's kind (Teletext / CC / Image / Text), by mpvId; empty = no labels.
     kinds: Map<Int, tv.own.owntv.translate.SubtitleKind> = emptyMap(),
+    // OwnTVnew: per row (same order as [tracks]), whether it has shown subtitles on this channel —
+    // a green dot if so, a pale one if not; null = no dots (films).
+    dots: List<Boolean>? = null,
 ) {
     val focus = remember { FocusRequester() }
     BackHandler { onDismiss() }
@@ -135,6 +140,7 @@ internal fun TrackDialog(
                 selected = track.selected,
                 modifier = if (focusThis) Modifier.focusRequester(focus) else Modifier,
                 onClick = { onSelect(track) },
+                dot = dots?.getOrNull(index),
             )
         }
         // OwnTVnew: TRANSLATE (subtitles dialog) — live on-device translation of the shown subtitles.
@@ -462,10 +468,24 @@ private fun DialogScaffold(
 
 /** `.opt` with a radio: one of a list, the current one ringed. */
 @Composable
-private fun OptionRow(label: String, selected: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+private fun OptionRow(label: String, selected: Boolean, modifier: Modifier = Modifier, dot: Boolean? = null, onClick: () -> Unit) {
     tv.own.owntv.ui.stage.StagePopupOption(
         title = label, onClick = onClick, modifier = modifier, chosen = selected,
         leading = { f -> tv.own.owntv.ui.stage.StagePopupRadio(selected, f) },
+        trailing = if (dot == null) null else { _ -> SubtitleDot(dot) },
+    )
+}
+
+/** OwnTVnew: green once the track has shown subtitles on this channel, pale grey until then. */
+@Composable
+private fun SubtitleDot(seen: Boolean) {
+    androidx.compose.foundation.layout.Box(
+        Modifier
+            .size(14.mpx)
+            .background(
+                if (seen) androidx.compose.ui.graphics.Color(0xFF34C759) else androidx.compose.ui.graphics.Color(0x55FFFFFF),
+                androidx.compose.foundation.shape.CircleShape,
+            ),
     )
 }
 

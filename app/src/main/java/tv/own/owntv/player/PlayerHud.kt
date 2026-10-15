@@ -909,11 +909,29 @@ fun PlayerHud(
             val subContext = androidx.compose.ui.platform.LocalContext.current
             val translateTarget by tv.own.owntv.translate.SubtitleTranslator.target.collectAsStateWithLifecycle()
             val subKinds = remember(subTracks) { tv.own.owntv.translate.SubtitleKinds.of(player) }
+            // OwnTVnew: one row per language of a multi-language teletext stream (its page), and a dot
+            // on each row: green once that track has shown subtitles on this channel.
+            val subRows = remember(subTracks) { subtitleRows(subTracks) }
+            val notesVersion by tv.own.owntv.translate.ChannelNotes.version.collectAsStateWithLifecycle()
+            val subChannel = player.currentMeta.value.title?.takeIf { player.isLiveContent }
+            val subDots = remember(subRows, notesVersion, subChannel) {
+                subChannel?.let { ch ->
+                    subRows.map { r ->
+                        tv.own.owntv.translate.ChannelNotes.trackSeen(
+                            subContext, ch,
+                            tv.own.owntv.translate.SubtitleWatch.key(subKinds[r.track.mpvId], r.track.lang, r.page?.takeIf { r.split }),
+                        )
+                    }
+                }
+            }
             TrackDialog(
-                stringResource(R.string.player_subtitles), subTracks,
-                onSelect = {
-                    tv.own.owntv.translate.SubtitleChoice.rememberTrack(subContext, it)
-                    player.selectSubtitle(it.mpvId); dialog = HudDialog.NONE
+                stringResource(R.string.player_subtitles), subRows.map { it.track },
+                onSelect = { row ->
+                    val picked = subRows.firstOrNull { it.track === row }
+                    tv.own.owntv.translate.SubtitleWatch.userPicked()
+                    tv.own.owntv.translate.SubtitleChoice.rememberTrack(subContext, row)
+                    picked?.page?.let { tv.own.owntv.translate.TeletextPages.choose(player, it) }
+                    player.selectSubtitle(row.mpvId); dialog = HudDialog.NONE
                 },
                 onOff = {
                     tv.own.owntv.translate.SubtitleChoice.rememberOff(subContext)
@@ -921,6 +939,7 @@ fun PlayerHud(
                 },
                 translateTarget = translateTarget,
                 kinds = subKinds,
+                dots = subDots,
                 onSelectTranslate = { lang ->
                     tv.own.owntv.translate.SubtitleTranslator.setTarget(subContext, lang); dialog = HudDialog.NONE
                 },
@@ -979,5 +998,27 @@ fun PlayerHud(
             }
         }
         HudDialog.NONE -> Unit
+    }
+}
+
+/** OwnTVnew: a Subtitles-menu row — a track, or one language ([page]) of a split teletext track. */
+internal class SubtitleRow(val track: TrackOption, val page: Int?, val split: Boolean)
+
+/**
+ * OwnTVnew: the Subtitles menu's rows. A teletext track whose title names its language pages
+ * (see [tv.own.owntv.translate.TeletextPages]) becomes one row per language, labelled by language; a row
+ * is selected when its track is and mpv shows its page. Every other track is its own row.
+ */
+internal fun subtitleRows(tracks: List<TrackOption>): List<SubtitleRow> = tracks.flatMap { t ->
+    val pages = tv.own.owntv.translate.TeletextPages.pages(t)
+    when {
+        pages.isEmpty() -> listOf(SubtitleRow(t, null, false))
+        pages.size == 1 -> listOf(SubtitleRow(t.copy(label = "", lang = pages[0].lang), null, false))
+        else -> pages.map { p ->
+            SubtitleRow(
+                t.copy(label = "", lang = p.lang, selected = t.selected && tv.own.owntv.translate.TeletextPages.current == p.page),
+                p.page, true,
+            )
+        }
     }
 }
