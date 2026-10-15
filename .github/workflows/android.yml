@@ -261,11 +261,11 @@ jobs:
             echo "ARM_SRC=$ARM_SRC" >> "$GITHUB_ENV"
             echo "X86_SRC=$X86_SRC" >> "$GITHUB_ENV"
           else
-            echo "Building debug APK"
-            bash .github/scripts/gradlew-annotated.sh assembleDebug
-            # Debug also builds both flavors; standard (arm) is the one most likely to be tested on a
-            # real device. Surface it as the primary artifact; x86_64 debug is still in its folder.
-            SRC=$(ls app/build/outputs/apk/standard/debug/*.apk | head -n1)
+            # OwnTVnew: no release secrets in the fork — build the optimised release APK (arm only),
+            # signed with the fork's fixed key (app/build.gradle.kts), so it installs over earlier builds.
+            echo "Building release APK (fixed fork key)"
+            bash .github/scripts/gradlew-annotated.sh assembleStandardRelease
+            SRC=$(ls app/build/outputs/apk/standard/release/*.apk | head -n1)
             echo "Built: $SRC"
             echo "ARM_SRC=$SRC" >> "$GITHUB_ENV"
           fi

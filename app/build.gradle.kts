@@ -184,6 +184,11 @@ android {
             )
             if (releaseKeystore != null) {
                 signingConfig = signingConfigs.getByName("release")
+            } else {
+                // OwnTVnew: the fork's CI ships the optimised release build (R8 + baseline profile —
+                // much smoother on TV boxes than debug), signed with the same fixed key as before so
+                // it installs straight over the earlier debug builds.
+                signingConfig = signingConfigs.getByName("fixedDebug")
             }
         }
     }
