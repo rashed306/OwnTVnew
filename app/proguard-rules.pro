@@ -31,3 +31,14 @@
     void setCcSoftwareOverride(boolean);
 }
 -keepclassmembers class tv.own.owntv.player.LivePreviewEngine { *** player; }
+
+# --- OwnTVnew: ML Kit (translate, language id, text recognition). Its internal protobuf classes are
+#     read by name; with them shrunk, language detection failed silently ("Detecting language…"). ---
+-keep class com.google.mlkit.** { *; }
+-keep class com.google.android.gms.internal.mlkit_** { *; }
+-keep class com.google.android.gms.tasks.** { *; }
+
+# --- OwnTVnew: shrink and rename, but no code rewriting. Optimisation passes are where release-only
+#     behaviour changes come from (lip sync drifted on both players in the first release build); the
+#     smoothness gain comes from a non-debuggable build plus the baseline profile anyway. ---
+-dontoptimize
